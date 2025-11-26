@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ruang Baca Interaktif Sejarah Imam Mazhab - SeventhGroup Art">
+    <meta name="author" content="SeventhGroup Art">
+    <title>أئمة المذاهب الفقهية | Ruang Baca</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Noto+Naskh+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- CORE SETTINGS --- */
+        :root {
+            --color-gold: #d69e2e;
+            
+            /* EVOLUSI WAKTU */
+            /* Pagi: Cream Hangat */
+            --bg-morning: linear-gradient(135deg, #fdfbf7 0%, #fff5eb 100%);
+            /* Siang: Putih Bersih */
+            --bg-noon: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+            /* Senja: Palet Spesifik User (Imam Ahmad - End) */
+            --bg-sunset: linear-gradient(160deg, #FFF085 0%, #FCB454 40%, #FF9B17 70%, #F16767 100%);
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Noto Naskh Arabic', serif;
+            overflow: hidden;
+            background: var(--bg-morning);
+            color: #2d3748;
+            /* Transisi Background Halus */
+            transition: background 3s ease-in-out, color 2s ease;
+        }
+
+        /* --- LAYOUT UTILS --- */
+        #main-container {
+            height: 100vh; width: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            position: relative; z-index: 10;
+        }
+
+        section {
+            height: 100vh; width: 100%;
+            scroll-snap-align: start; scroll-snap-stop: always;
+            position: relative; display: flex;
+            align-items: center; justify-content: center;
+            padding: 2rem; box-sizing: border-box; overflow: hidden;
+        }
+
+        #main-container::-webkit-scrollbar { display: none; }
+        #main-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .eng-text { font-family: 'Montserrat', sans-serif; direction: ltr; }
+        .arabic-text { font-family: 'Noto Naskh Arabic', serif; line-height: 1.8; }
+
+        /* Card Styles */
+        .content-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            transition: all 2s ease;
+        }
+
+        /* --- ANIMATIONS --- */
+        .fade-in-up { opacity: 0; transform: translateY(30px); transition: all 1s ease-out; }
+        section.active .fade-in-up { opacity: 1; transform: translateY(0); }
+        .delay-100 { transition-delay: 0.1s; }
+        .delay-200 { transition-delay: 0.2s; }
+        .delay-500 { transition-delay: 0.5s; }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .float-anim { animation: float 4s ease-in-out infinite; }
+
+        /* --- SIDEBAR --- */
+        #sidebar {
+            position: fixed; top: 0; right: -320px;
+            width: 300px; height: 100vh;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            z-index: 50;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.05);
+            transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        #sidebar.open { transform: translateX(-320px); }
+
+        .menu-btn {
+            position: fixed; top: 2rem; right: 2rem; z-index: 60;
+            background: transparent; border: none; cursor: pointer;
+            width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.4s ease;
+            opacity: 0; transform: translateY(-10px); pointer-events: none;
+        }
+        .menu-btn.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+        .menu-line { width: 30px; height: 2px; background: #2d3748; position: absolute; transition: 0.4s; }
+
+        .menu-line.top { transform: translateY(-8px); }
+        .menu-line.bot { transform: translateY(8px); }
+        .menu-btn.active .menu-line.mid { opacity: 0; }
+        .menu-btn.active .menu-line.top { transform: rotate(45deg); }
+        .menu-btn.active .menu-line.bot { transform: rotate(-45deg); }
+
+        .nav-link {
+            font-family: 'Noto Naskh Arabic', serif; font-size: 1.1rem;
+            color: #4a5568; padding: 1rem 2rem; display: block;
+            transition: all 0.3s; border-right: 3px solid transparent; cursor: pointer;
+        }
+        .nav-link:hover {
+            color: var(--color-gold); background: #fffaf0;
+            border-right: 3px solid var(--color-gold); padding-right: 2.5rem;
+        }
+
+        #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <button id="toggle-btn" class="menu-btn">
+        <div class="menu-line top"></div>
+        <div class="menu-line mid"></div>
+        <div class="menu-line bot"></div>
+    </button>
+
+    <nav id="sidebar">
+        <div class="flex flex-col space-y-2 text-right">
+            <div class="px-8 mb-8">
+                <h2 class="text-2xl font-bold arabic-text text-gray-800">الفهرس</h2>
+                <p class="text-xs eng-text text-gray-400 mt-1">Table of Contents</p>
+            </div>
+            <a onclick="scrollToSection(0)" class="nav-link">الصفحة الرئيسية</a>
+            <a onclick="scrollToSection(3)" class="nav-link">الإمام مالك بن أنس</a>
+            <a onclick="scrollToSection(6)" class="nav-link">الإمام الشافعي</a>
+            <a onclick="scrollToSection(9)" class="nav-link">الإمام أحمد بن حنبل</a>
+            <a onclick="scrollToSection(12)" class="nav-link">عن الفريق</a>
+            <a onclick="scrollToSection(13)" class="nav-link">الخصوصية والختام</a>
+        </div>
+        <div class="absolute bottom-8 w-full text-center px-8">
+            <p class="text-xs eng-text text-gray-400">© 2025 SeventhGroup Art</p>
+        </div>
+    </nav>
+
+    <main id="main-container">
+
+        <!-- 1. HERO (Morning) -->
+        <section data-time="morning" class="flex flex-col items-center justify-center text-center">
+            <div class="z-10 fade-in-up">
+                <p class="text-yellow-600 font-bold tracking-widest text-sm mb-4 eng-text uppercase">Islamic History Presentation</p>
+                <h1 class="text-6xl md:text-8xl font-bold text-gray-800 mb-6 arabic-text">أئمة المذاهب الفقهية</h1>
+                <p class="text-2xl md:text-3xl text-gray-600 font-light arabic-text">سير وأعلام</p>
+                <div class="mt-12 w-1 h-20 rounded-full bg-gradient-to-b from-gray-300 to-transparent mx-auto"></div>
+            </div>
+            <div class="absolute top-8 left-8 hidden md:block fade-in-up delay-500">
+                <span class="text-xl font-bold text-gray-800 eng-text">SeventhGroup</span>
+            </div>
+        </section>
+
+        <!-- 2. TEAM (Morning) -->
+        <section data-time="morning" class="flex-col">
+            <div class="max-w-4xl w-full z-10 text-center">
+                <h2 class="text-4xl font-bold mb-12 arabic-text text-gray-800 fade-in-up">فريق العمل</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
+                    <div class="content-card p-8 fade-in-up delay-100 hover:scale-105 transition-transform duration-500">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center text-blue-500"><i class="fa-solid fa-user-graduate text-2xl"></i></div>
+                        <h3 class="text-xl font-bold mb-2 eng-text">Achmad Haidar Noor</h3>
+                        <p class="text-sm text-gray-500 eng-text">2025.03.3766</p>
+                    </div>
+                    <div class="content-card p-8 fade-in-up delay-200 hover:scale-105 transition-transform duration-500">
+                        <div class="w-16 h-16 bg-orange-100 rounded-full mx-auto mb-4 flex items-center justify-center text-orange-500"><i class="fa-solid fa-pen-nib text-2xl"></i></div>
+                        <h3 class="text-xl font-bold mb-2 eng-text">Jovinda Yusuf</h3>
+                        <p class="text-sm text-gray-500 eng-text">2025.03.4375</p>
+                    </div>
+                    <div class="content-card p-8 fade-in-up delay-300 hover:scale-105 transition-transform duration-500">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full mx-auto mb-4 flex items-center justify-center text-purple-500"><i class="fa-solid fa-book-open text-2xl"></i></div>
+                        <h3 class="text-xl font-bold mb-2 eng-text">Rosul Sayyaf</h3>
+                        <p class="text-sm text-gray-500 eng-text">2025.03.3987</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. INTRO (Morning) -->
+        <section data-time="morning">
+            <div class="max-w-3xl w-full z-10 text-center content-card p-10 md:p-16 fade-in-up" 
+                 style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(8px);">
+                <i class="fa-solid fa-quote-right text-4xl text-gray-400 mb-6 block"></i>
+                <h2 class="text-4xl font-bold mb-8 arabic-text text-gray-800">المقدمة</h2>
+                <p class="text-xl leading-loose text-gray-700 text-justify arabic-text" dir="rtl">
+                    الحمد لله الذي رفع منار العلم وأعلى قدر العلماء، والصلاة والسلام على معلم الناس الخير. 
+                    نقدم لكم في هذا الموقع الإلكتروني التفاعلي رحلة علمية عبر سير أئمة المذاهب الفقهية، 
+                    الذين حفظوا لنا الدين وفصلوا الأحكام. هذا العمل جهد متواضع نهدف من خلاله إلى تيسير المعرفة 
+                    بأسلوب عصري يجمع بين الأصالة والحداثة.
+                </p>
+            </div>
+        </section>
+
+        <!-- 4-6. IMAM MALIK (Noon) -->
+        <section data-time="noon" class="bg-opacity-50">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl w-full items-center z-10">
+                <div class="text-right fade-in-up order-2 md:order-1">
+                    <span class="text-orange-500 font-bold tracking-widest text-sm mb-2 block arabic-text">إمام دار الهجرة</span>
+                    <h2 class="text-5xl font-bold mb-6 text-gray-900 arabic-text">الإمام مالك بن أنس</h2>
+                    <div class="bg-white/60 p-6 rounded-lg shadow-sm border-r-4 border-orange-400">
+                        <h3 class="text-2xl font-bold mb-3 arabic-text">سيرته ونشأته</h3>
+                        <p class="text-lg leading-loose text-gray-700 arabic-text">
+                            ولد الإمام مالك سنة ٩٣ هـ في المدينة المنورة. نشأ في بيئة علمية خالصة، حيث لم يغادر المدينة إلا للحج، مما جعله يتشبع بعلم أهل المدينة وعملهم، حتى أصبح يُلقب بـ "إمام دار الهجرة".
+                        </p>
+                    </div>
+                </div>
+                <div class="flex justify-center fade-in-up delay-200 order-1 md:order-2 float-anim">
+                    <div class="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-tr from-orange-200 to-white rounded-full flex items-center justify-center shadow-2xl">
+                        <span class="text-9xl text-orange-400 opacity-20"><i class="fa-solid fa-kaaba"></i></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section data-time="noon">
+            <div class="max-w-4xl w-full z-10 fade-in-up text-right">
+                <h2 class="text-4xl font-bold mb-8 text-gray-800 arabic-text border-b pb-4">فقهه ومؤلفاته</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="content-card p-6">
+                        <h3 class="text-xl font-bold mb-2 text-orange-600 arabic-text">أصول مذهبه</h3>
+                        <p class="leading-relaxed text-gray-700 arabic-text">بنى مذهبه على الكتاب والسنة، ثم الإجماع، واختص بالأخذ بـ "عمل أهل المدينة" المقدم عنده على خبر الآحاد.</p>
+                    </div>
+                    <div class="content-card p-6">
+                        <h3 class="text-xl font-bold mb-2 text-orange-600 arabic-text">كتاب الموطأ</h3>
+                        <p class="leading-relaxed text-gray-700 arabic-text">هو من أصح الكتب وأقدمها في تدوين الحديث والفقه معاً، جمع فيه بين الأحاديث وأقوال الصحابة.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section data-time="noon">
+            <div class="max-w-5xl w-full z-10 fade-in-up">
+                <h2 class="text-4xl font-bold mb-10 text-center text-gray-800 arabic-text">سلسلة العلم</h2>
+                <div class="flex flex-col md:flex-row justify-between gap-8 text-right">
+                    <div class="flex-1 content-card p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-600 border-b border-gray-300 pb-2">أشهر شيوخه</h3>
+                        <ul class="space-y-4 arabic-text">
+                            <li><strong class="text-orange-600">نافع:</strong> مولى ابن عمر (السلسلة الذهبية).</li>
+                            <li><strong class="text-orange-600">ابن شهاب الزهري:</strong> أول من دون السنة.</li>
+                            <li><strong class="text-orange-600">ربيعة الرأي:</strong> فقيه المدينة.</li>
+                        </ul>
+                    </div>
+                    <div class="flex-1 content-card p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-600 border-b border-gray-300 pb-2">أشهر تلاميذه</h3>
+                        <ul class="space-y-4 arabic-text">
+                            <li><strong class="text-orange-600">ابن القاسم:</strong> أشهر من روى عنه.</li>
+                            <li><strong class="text-orange-600">سحنون:</strong> ناشر المذهب في المغرب.</li>
+                            <li><strong class="text-orange-600">ابن وهب:</strong> الفقيه المصري.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7-9. IMAM SHAFI'I (Noon) -->
+        <section data-time="noon">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl w-full items-center z-10">
+                <div class="flex justify-center fade-in-up order-2 md:order-1 float-anim">
+                     <div class="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-tr from-blue-200 to-white rounded-full flex items-center justify-center shadow-2xl">
+                        <span class="text-9xl text-blue-400 opacity-20"><i class="fa-solid fa-scroll"></i></span>
+                    </div>
+                </div>
+                <div class="text-right fade-in-up delay-200 order-1 md:order-2">
+                    <span class="text-blue-500 font-bold tracking-widest text-sm mb-2 block arabic-text">ناصر الحديث</span>
+                    <h2 class="text-5xl font-bold mb-6 text-gray-900 arabic-text">الإمام الشافعي</h2>
+                    <h3 class="text-xl text-gray-500 mb-4 arabic-text">محمد بن إدريس</h3>
+                    <div class="bg-white/60 p-6 rounded-lg shadow-sm border-r-4 border-blue-400">
+                        <h3 class="text-2xl font-bold mb-3 arabic-text">حياته ورحلاته</h3>
+                        <p class="text-lg leading-loose text-gray-700 arabic-text">
+                            ولد بغزة سنة ١٥٠ هـ. نشأ يتيماً بمكة. رحل إلى المدينة ليأخذ العلم عن الإمام مالك، ثم إلى اليمن، والعراق، وانتهى به المطاف في مصر.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section data-time="noon">
+            <div class="max-w-4xl w-full z-10 fade-in-up text-right">
+                <h2 class="text-4xl font-bold mb-8 text-gray-800 arabic-text border-b pb-4">فقهه ومؤلفاته</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="content-card p-6 border-blue-200">
+                        <h3 class="text-xl font-bold mb-2 text-blue-600 arabic-text">أهم كتبه</h3>
+                        <p class="leading-relaxed text-gray-700 mb-2 arabic-text"><strong>كتاب الأم:</strong> الموسوعة الفقهية لمذهبه الجديد.</p>
+                        <p class="leading-relaxed text-gray-700 arabic-text"><strong>كتاب الرسالة:</strong> أول كتاب صنف في علم أصول الفقه.</p>
+                    </div>
+                    <div class="content-card p-6 border-blue-200">
+                        <h3 class="text-xl font-bold mb-2 text-blue-600 arabic-text">تطور مذهبه</h3>
+                        <p class="leading-relaxed text-gray-700 mb-2 arabic-text"><strong>القديم:</strong> في العراق (كتاب الحجة).</p>
+                        <p class="leading-relaxed text-gray-700 arabic-text"><strong>الجديد:</strong> في مصر (كتاب الأم) بعد تغير العرف والبيئة.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section data-time="noon">
+            <div class="max-w-5xl w-full z-10 fade-in-up">
+                <h2 class="text-4xl font-bold mb-10 text-center text-gray-800 arabic-text">سلسلة العلم</h2>
+                <div class="flex flex-col md:flex-row justify-between gap-8 text-right">
+                    <div class="flex-1 content-card p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-600 border-b border-gray-300 pb-2">أشهر شيوخه</h3>
+                        <ul class="space-y-4 arabic-text">
+                            <li><strong class="text-blue-600">الإمام مالك:</strong> لازمه في المدينة.</li>
+                            <li><strong class="text-blue-600">سفيان بن عيينة:</strong> محدث الحرم المكي.</li>
+                            <li><strong class="text-blue-600">وكيع بن الجراح:</strong> محدث الكوفة.</li>
+                        </ul>
+                    </div>
+                    <div class="flex-1 content-card p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-600 border-b border-gray-300 pb-2">أشهر تلاميذه</h3>
+                        <ul class="space-y-4 arabic-text">
+                            <li><strong class="text-blue-600">المزني:</strong> ناصر المذهب.</li>
+                            <li><strong class="text-blue-600">البويطي:</strong> خليفة الشافعي.</li>
+                            <li><strong class="text-blue-600">الربيع بن سليمان:</strong> راوي كتبه.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10-12. IMAM AHMAD (NEW THEME: SUNSET / SENJA with FULL TEXT) -->
+        <section data-time="sunset">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl w-full items-center z-10">
+                <div class="text-right fade-in-up order-2 md:order-1">
+                    <span class="text-red-800 font-bold tracking-widest text-sm mb-2 block arabic-text">إمام أهل السنة</span>
+                    <h2 class="text-5xl font-bold mb-6 text-gray-900 arabic-text">الإمام أحمد بن حنبل</h2>
+                    
+                    <div class="content-card p-6 rounded-lg shadow-sm border-r-4 border-red-500 bg-white/60">
+                        <h3 class="text-2xl font-bold mb-3 arabic-text text-red-900">حياته ومحنة القرآن</h3>
+                        <p class="text-lg leading-loose text-gray-900 mb-4 arabic-text">
+                            ولد في بغداد سنة ١٦٤ هـ، ونشأ يتيماً فقيراً. طاف البلاد لجمع سنة النبي ﷺ.
+                        </p>
+                        <p class="text-md leading-loose text-gray-800 arabic-text">
+                            <strong>المحنة:</strong> صبر على السجن والتعذيب في فتنة خلق القرآن حتى نصره الله وثبتت عقيدة أهل السنة.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex justify-center fade-in-up delay-200 order-1 md:order-2 float-anim">
+                     <div class="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-tr from-red-200 to-yellow-100 rounded-full flex items-center justify-center shadow-lg">
+                        <span class="text-9xl text-red-500 opacity-80"><i class="fa-solid fa-shield-halved"></i></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section data-time="sunset">
+            <div class="max-w-4xl w-full z-10 fade-in-up text-right">
+                <h2 class="text-4xl font-bold mb-8 text-gray-900 arabic-text border-b border-red-300 pb-4">فقهه ومؤلفاته</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="content-card p-6 border-red-200 bg-white/50">
+                        <h3 class="text-xl font-bold mb-2 text-red-800 arabic-text">منهجه الأثري</h3>
+                        <p class="leading-relaxed text-gray-900 arabic-text">يعتمد مذهبه على النصوص (الكتاب والسنة) وفتاوى الصحابة، ويقدم الحديث الضعيف على القياس.</p>
+                    </div>
+                    <div class="content-card p-6 border-red-200 bg-white/50">
+                        <h3 class="text-xl font-bold mb-2 text-red-800 arabic-text">المسند</h3>
+                        <p class="leading-relaxed text-gray-900 arabic-text">أضخم دواوين السنة، جمع فيه قرابة أربعين ألف حديث.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section data-time="sunset">
+            <div class="max-w-5xl w-full z-10 fade-in-up">
+                <h2 class="text-4xl font-bold mb-10 text-center text-gray-900 arabic-text">سلسلة العلم</h2>
+                <div class="flex flex-col md:flex-row justify-between gap-8 text-right">
+                    <div class="flex-1 content-card p-8 bg-white/60">
+                        <h3 class="text-2xl font-bold mb-6 text-red-900 border-b border-red-300 pb-2">أشهر شيوخه</h3>
+                        <ul class="space-y-4 arabic-text">
+                            <li><strong class="text-red-700">الإمام الشافعي:</strong> الفقه والأصول.</li>
+                            <li><strong class="text-red-700">سفيان بن عيينة:</strong> الحديث والتفسير.</li>
+                            <li><strong class="text-red-700">يحيى القطان:</strong> نقد الرجال.</li>
+                        </ul>
+                    </div>
+                    <div class="flex-1 content-card p-8 bg-white/60">
+                        <h3 class="text-2xl font-bold mb-6 text-red-900 border-b border-red-300 pb-2">أشهر تلاميذه</h3>
+                        <ul class="space-y-4 arabic-text">
+                            <li><strong class="text-red-700">إبراهيم الحربي:</strong> الزاهد.</li>
+                            <li><strong class="text-red-700">أبو بكر الأثرم:</strong> جامع المسائل.</li>
+                            <li><strong class="text-red-700">الميموني:</strong> الدقيق في النقل.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 13. ABOUT US (Sunset Theme) -->
+        <section data-time="sunset">
+            <div class="max-w-3xl w-full z-10 text-center content-card p-8 border-0">
+                <h2 class="text-4xl font-bold mb-6 eng-text text-gray-800">About Us</h2>
+                <p class="text-lg text-gray-700 eng-text mb-6">
+                    We are a dedicated group of students passionate about preserving and presenting Islamic history through modern digital experiences.
+                </p>
+                <div class="flex justify-center space-x-6 eng-text">
+                     <span class="px-3 py-1 bg-white/40 text-gray-800 rounded-full text-xs border border-white/20">Educational</span>
+                     <span class="px-3 py-1 bg-white/40 text-gray-800 rounded-full text-xs border border-white/20">Historical</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 14. PRIVACY & TERMS (Sunset Theme) -->
+        <section data-time="sunset" class="overflow-hidden h-screen flex flex-col justify-center">
+            <div class="w-full max-w-5xl z-10 px-6 py-4 content-card border-0 bg-opacity-40 flex flex-col justify-between h-[85vh]">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left eng-text flex-grow overflow-hidden">
+                    <div class="flex flex-col justify-center">
+                        <h3 class="text-2xl font-bold mb-2 text-gray-800">Privacy Policy</h3>
+                        <p class="text-xs text-gray-600 mb-2">Updated: Oct 2025</p>
+                        <p class="text-sm text-gray-700 leading-relaxed">
+                            This static presentation does not collect personal data, use cookies, or track user behavior. Your browsing experience is entirely local and private.
+                        </p>
+                    </div>
+                    <div class="flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/30 md:pl-8 pt-4 md:pt-0">
+                        <h3 class="text-2xl font-bold mb-2 text-gray-800">Terms of Service</h3>
+                        <p class="text-sm text-gray-700 leading-relaxed">
+                            Content is for educational purposes derived from Islamic history sources. Reproduction of code/design without permission from "SeventhGroup Art" is prohibited.
+                        </p>
+                    </div>
+                </div>
+                <div class="text-center border-t border-white/30 pt-6 mt-4">
+                    <h4 class="text-2xl font-bold text-gray-800 mb-2 arabic-text">الخاتمة</h4>
+                    <p class="text-gray-800 mb-4 arabic-text text-lg">نسأل الله أن ينفع بهذا العمل وأن يجعله خالصاً لوجهه الكريم.</p>
+                    <p class="text-xs font-bold text-gray-600 eng-text tracking-[0.3em] uppercase opacity-80">
+                        License Developer: seventhgroup-art
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // CONFIG
+        const scrollContainer = document.getElementById('main-container');
+        const sections = document.querySelectorAll('section');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const sidebar = document.getElementById('sidebar');
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // NAVIGATION LOGIC
+        let isMenuOpen = false;
+        let isBtnVisible = false;
+
+        function toggleMenu() {
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                sidebar.classList.add('open');
+                toggleBtn.classList.add('active');
+            } else {
+                sidebar.classList.remove('open');
+                toggleBtn.classList.remove('active');
+            }
+        }
+
+        function scrollToSection(index) {
+            sections[index].scrollIntoView({ behavior: 'smooth' });
+            toggleMenu();
+        }
+
+        toggleBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
+        document.addEventListener('click', (e) => {
+            if (sidebar.contains(e.target) || toggleBtn.contains(e.target)) return;
+            if (isMenuOpen) { toggleMenu(); return; }
+            if (isBtnVisible) { toggleBtn.classList.remove('visible'); isBtnVisible = false; }
+            else { toggleBtn.classList.add('visible'); isBtnVisible = true; }
+        });
+
+        // ATMOSPHERE LOGIC
+        const observerOptions = { root: scrollContainer, threshold: 0.5 };
+        let currentAtmosphere = 'morning';
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    const time = entry.target.getAttribute('data-time');
+                    updateAtmosphere(time);
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => observer.observe(section));
+
+        function updateAtmosphere(time) {
+            if(currentAtmosphere === time) return;
+            currentAtmosphere = time;
+            
+            const body = document.body;
+            body.classList.remove('night-mode'); 
+
+            if (time === 'morning') {
+                body.style.background = 'var(--bg-morning)';
+                setParticleState('dust', 'rgba(214, 158, 46, 0.3)', 0.5);
+            } 
+            else if (time === 'noon') {
+                body.style.background = 'var(--bg-noon)';
+                setParticleState('dust', 'rgba(100, 116, 139, 0.2)', 0.2);
+            } 
+            else if (time === 'sunset') { 
+                body.style.background = 'var(--bg-sunset)';
+                // Breeze Effect: Angin sepoi-sepoi
+                setParticleState('breeze', 'rgba(255, 255, 255, 0.4)', 0.5);
+            }
+        }
+
+        // PARTICLE SYSTEM
+        let particles = [];
+        let particleMode = 'dust'; 
+        let particleColor = 'rgba(214, 158, 46, 0.3)';
+        let particleSpeedBase = 0.5;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function setParticleState(mode, color, speed) {
+            particleMode = mode;
+            particleColor = color;
+            particleSpeedBase = speed;
+            initParticles();
+        }
+
+        class Particle {
+            constructor() { this.reset(); }
+
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                
+                if (particleMode === 'dust') {
+                    this.size = Math.random() * 3 + 1;
+                    this.speedX = (Math.random() - 0.5) * particleSpeedBase;
+                    this.speedY = (Math.random() - 0.5) * particleSpeedBase;
+                    this.alpha = Math.random() * 0.5 + 0.1;
+                } else if (particleMode === 'breeze') {
+                    // Breeze: Move horizontally generally
+                    this.size = Math.random() * 3 + 1;
+                    this.speedX = -Math.random() * 1.5 - 0.5; // Gentle Left direction
+                    this.speedY = (Math.random() - 0.5) * 0.5; 
+                    this.alpha = Math.random() * 0.4 + 0.1;
+                    this.gustOffset = Math.random() * 100;
+                }
+            }
+
+            update() {
+                if (particleMode === 'dust') {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    this.wrap();
+                } 
+                else if (particleMode === 'breeze') {
+                    // Gentle gust
+                    let time = Date.now() * 0.001;
+                    let gust = Math.sin(time + this.gustOffset);
+                    let currentSpeedX = this.speedX;
+                    
+                    // Sesekali bertiup sedikit lebih kencang (tapi tetap lembut)
+                    if(gust > 0.7) currentSpeedX *= 1.8; 
+
+                    this.x += currentSpeedX;
+                    this.y += this.speedY;
+                    this.wrap();
+                }
+            }
+
+            wrap() {
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.fillStyle = particleColor;
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            let count = 60;
+            for (let i = 0; i < count; i++) { particles.push(new Particle()); }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) { particles[i].update(); particles[i].draw(); }
+            requestAnimationFrame(animateParticles);
+        }
+
+        resizeCanvas();
+        animateParticles();
+
+    </script>
+</body>
+</html>
+
+
